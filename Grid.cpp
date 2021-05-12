@@ -1,49 +1,46 @@
 #pragma once
 #define NOMINMAX
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <vector>
 #include <thread>
 #include <cstdlib>
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
-#include "HydrusCall.hpp"
-#include "Image.hpp"
-#include "Utils.hpp"
 #include "Grid.hpp"
+#include "MovableRect.h"
 using namespace std;
 
 #define WIDTH 1920
 #define HEIGHT 1080
 
 
-Grid::Grid(SDL_Renderer* rend) :hydrus(45869){
-	focusimg = NULL;
-	renderer = rend;
+Grid::Grid(SDL_Renderer* rend, int x, int y):hydrus(45869), renderer(rend), xthumb(x), ythumb(y), focusimg(NULL){
+	xpad = 5; //X-axis padding
+	ypad = 5; //Y-axis padding
+
+	//Initilize x_rect_vect and y_rect_vect to be the starting position of our grid of rects
+	x_rect_vect = xpad;
+	y_rect_vect = 100 + ypad;
+
+	//Get maximum images per row
+	max_img_per_row = (WIDTH - xpad) / (xpad + xthumb);
+
+	//Set hardcoded tags
+	hard_tags.push_back("-medium:animated");
+	hard_tags.push_back("-non-conventional");
+
 };
 
 void Grid::renderThumbs() {
-	int width;
-	int height;
-
 	for (size_t k = minimg; k < maximg; k++) {
 
-		SDL_SetRenderDrawColor(renderer, 145, 145, 145, 255);
-		SDL_RenderFillRect(renderer, &rects[k]);
+		//SDL_SetRenderDrawColor(renderer, 145, 145, 145, 255);
+		//SDL_RenderFillRect(renderer, &image_boarder[k]);
+
+		SDL_RenderCopy(renderer, images[k]->getThumbText(), NULL, &rects[k]);
+
+		SDL_SetRenderDrawColor(renderer, 58, 205, 220, 255);
+		SDL_RenderDrawRect(renderer, &rects[k]);
 		SDL_SetRenderDrawColor(renderer, 58, 58, 58, 255);
 
-		SDL_QueryTexture(images[k].getThumbText(), NULL, NULL, &width ,&height);
-		rects[k].w = width;
-		rects[k].h = height;
-
-		SDL_RenderCopy(renderer, images[k].getThumbText(), NULL, &rects[k]);
-
 	}
-	for (size_t k = maximg; k < maxunloaded; k++) {
+	for (size_t k = maximg; k < std::min((int)rects.size(),total_images); k++) {
 		SDL_SetRenderDrawColor(renderer, 145, 145, 145, 255);
 		SDL_RenderFillRect(renderer, &rects[k]);
 	}
@@ -51,7 +48,7 @@ void Grid::renderThumbs() {
 
 void Grid::destroyImages() {
 	for (auto& image : images) {
-		image.Destroy();
+		delete image;
 	}
 	images.clear();
 };
@@ -61,49 +58,41 @@ void Grid::search(string tags) {
 	dy = 0;
 	loaded_images = 0;
 	thread_started = false;
-	for (auto& rect : rects) {
-		rect.y -= yscreenpos;
-	};
+	if (buildaheadimg.joinable()) { buildaheadimg.join(); }
+	minimg = 0;
+	maximg = 0;
+	x_rect_vect = xpad;
+	y_rect_vect = 100 + ypad;
 	yscreenpos -= yscreenpos;
+
+	//Clear all vectors
 	destroyImages();
+	rects.clear();
 	fileids.clear();
 
 	//Create query
 	vector<string> query_string = createTagsFromString(tags);
 
-	//create array of images
-	Image* focusimg = NULL;
+	//Add our hard coded tags into our query
+	for (auto& tag : hard_tags) {
+		query_string.push_back(tag);
+	}
 
-	//Perform a search with a tag
-	query_string.push_back("-medium:animated");
-	query_string.push_back("-non-conventional");
+	//Perform our search to get file_ids
 	fileids = hydrus.query(query_string);
 
-
-	load = loadcount;
-	if (fileids.size() < loadcount) {
-		load = fileids.size();
-	};
-	minimg = 0;
-	maximg = load;
+	//Set new limits
 	total_images = fileids.size();
-	maxunloaded = load;
-
-	//Build our images
-	BuildNextImages(load);
-
-	BuildTextVect(load);
-	BuildRectVect(images.size(), x_rect_vect, y_rect_vect);
-	loaded_images += load;
-	cout << "image size after search : " << images.size() << endl;
 	minypos = findBottomPos(total_images);
+
+	//Theses changes require a refresh to screen.
 	refresh = true;
 };
 
 void Grid::update() {
 	//Build more rects if getting close to having none
 	if (minimg + 70 > rects.size()) {
-		BuildRectVect(rects.size() + 35, x_rect_vect, y_rect_vect, yscreenpos);
+		BuildRectVect(rects.size() + loadcount, x_rect_vect, y_rect_vect, yscreenpos);
 
 	}
 
@@ -119,25 +108,29 @@ void Grid::update() {
 		}
 	}
 	else {
-		if (images.size() == loaded_images + load && buildaheadimg.joinable()) {
+		if ((int)images.size() == (loaded_images + load) && g_lock.try_lock()) {
+			g_lock.unlock();
 			buildaheadimg.join();
-			buildaheadtext = std::thread(&Grid::BuildTextVect, this, load);
-			buildaheadtext.join();
-			loaded_images += load;
-			thread_started = false;
+			BuildTextVect(load);
 			
+			
+			//Take our new images and fit them to rectangles.
+			FitRectsToImages(load);
+
+			loaded_images += load;
+			load = 0;
+			thread_started = false;
+
 			//recalculate loaded images
 			int num_img_rows = std::ceil((-yscreenpos - ypad) / ((ythumb + ypad)));
 			if (num_img_rows == 0) {
 				minimg = 0;
 			}
-			minimg = ((num_img_rows) * 7);
-			maximg = ((num_img_rows + 5) * 7);
+			minimg = ((num_img_rows) *max_img_per_row);
+			maximg = ((num_img_rows + 5) * max_img_per_row);
 
-			maxunloaded = std::max(maximg, loaded_images);
-			maxunloaded = std::min(maxunloaded, total_images);
-			maxunloaded = std::min(maxunloaded, (int)rects.size());
 			maximg = std::min(maximg, loaded_images);
+			refresh = true;
 		}
 	}
 
@@ -159,8 +152,6 @@ void Grid::update() {
 				//move = false;
 				//dy = 0;
 			}
-
-			
 		}
 
 		//if calculation moved window beyond bounds reset bounds.
@@ -169,6 +160,10 @@ void Grid::update() {
 			for (auto& rect : rects) {
 				rect.y -= yscreenpos;
 			};
+			for (auto& rect : image_boarder) {
+				rect.y -= yscreenpos;
+			};
+
 			yscreenpos -= yscreenpos;
 			move = false;
 		}
@@ -176,6 +171,9 @@ void Grid::update() {
 		else if (yscreenpos < minypos) {
 			int diff = (yscreenpos - (minypos));
 			for (auto& rect : rects) {
+				rect.y -= diff;
+			};
+			for (auto& rect : image_boarder) {
 				rect.y -= diff;
 			};
 			yscreenpos -= diff;
@@ -187,6 +185,9 @@ void Grid::update() {
 			for (auto& rect : rects) {
 				rect.y += floor(dy);
 			};
+			for (auto& rect : image_boarder) {
+				rect.y += floor(dy);
+			};
 			yscreenpos += floor(dy);
 			move = false;
 		}
@@ -195,12 +196,9 @@ void Grid::update() {
 		if (num_img_rows == 0) {
 			minimg = 0;
 		}
-		minimg = ((num_img_rows) * 7);
-		maximg = ((num_img_rows + 5) * 7);
+		minimg = ((num_img_rows) *max_img_per_row);
+		maximg = ((num_img_rows + 5) * max_img_per_row);
 
-		maxunloaded = std::max(maximg, loaded_images);
-		maxunloaded = std::min(maxunloaded, total_images);
-		maxunloaded = std::min(maxunloaded, (int)rects.size());
 		maximg = std::min(maximg, loaded_images);
 
 		//cout << "Minypos : " << minypos << endl;
@@ -211,81 +209,33 @@ void Grid::update() {
 		//cout << "max unloaded :" << maxunloaded << endl;;
 		dy -= (dy / 25.f); //Scroll speed decay happens every loop
 	};
-	if (loadfile == 1) {
-	
-		 focusimg->BuildFileTexture(renderer, &fullfile);
-
-		int imgx = 0;
-		int imgy = 0;
-		SDL_QueryTexture(focusimg->getFileText(), NULL, NULL, &imgx, &imgy);
-		while (imgx > WIDTH-400) {
-			imgx -= imgx / 10;
-			imgy -= imgy / 10;
-		}
-		while (imgy > HEIGHT) {
-			imgx -= imgx / 10;
-			imgy -= imgy / 10;
-		}
-		int xpos = ((WIDTH) / 2) - (imgx / 2);
-		if (xpos < 400) {
-			int diff = 400 - xpos;
-			xpos += diff;
-		}
-
-		focusrect = { xpos, ((HEIGHT - ypad * 2) / 2 - imgy / 2) + ypad * 2, imgx, imgy };
-		focustext = focusimg->getFileText();
-
-		loadfile = 0;
-	}
 }
 
-bool Grid::presentFocus(int mousex, int mousey) {
 
-	for (int i = 0; i < rects.size(); i++) {
-		if (mousey >= rects[i].y && mousey <= rects[i].y + ythumb) {
-			if (mousex >= rects[i].x && mousex <= rects[i].x + xthumb) {
-				cout << "FOund rectangle" << endl;
-				dy = 0;
+//This function sets the focus image based on a mouse position
+//Returns true if an image was found returns false otherwise
+bool Grid::HandleClick(Vector2f pos, SDL_Rect max_hit_area) {
+	dy = 0;
+
+	if (!(pos.x >= max_hit_area.x && pos.x <= max_hit_area.x + max_hit_area.w)) {
+		return false;
+	}
+	if (!(pos.y >= max_hit_area.y && pos.y <= max_hit_area.y + max_hit_area.h)) {
+		return false;
+	}
+		
+	for (int i = minimg; i < std::min((int)rects.size(), total_images); i++) {
+		if (pos.y >= rects[i].y && pos.y <= rects[i].y + rects[i].h) {
+			if (pos.x >= rects[i].x && pos.x <= rects[i].x + rects[i].w) {
 				//TODO if a user clicks on an unloaded image preload the image.
-				if (i >= images.size()) {
-					focusimg = &images[0];
-				}
-				else {
-					focusimg = &images[i];
-				}
-				
-				int imgx;
-				int imgy;
-				if (focusimg->getFileText() != NULL) {
-					cout << "texture already built : " << focusimg->getFileText() << endl;
-					SDL_QueryTexture(focusimg->getFileText(), NULL, NULL, &imgx, &imgy);
-					focustext = focusimg->getFileText();
-					fullfile = 1;
-				}
-				else {
-					SDL_QueryTexture(focusimg->getThumbText(), NULL, NULL, &imgx, &imgy);
-					fullfile = 0;
-				}
-					imgx = imgx * 10;
-					imgy = imgy * 10;
-					while (imgx > WIDTH-400) {
-						imgx -= imgx / 10;
-						imgy -= imgy / 10;
-					}
-					while (imgy > (HEIGHT - ypad * 2)) {
-						imgx -= imgx / 10;
-						imgy -= imgy / 10;
-					}
-					int xpos = ((WIDTH) / 2) - (imgx / 2);
-					if (xpos < 400) {
-						int diff = 400 - xpos;
-						xpos += diff;
-					}
-					focusrect = { xpos, ((HEIGHT - ypad * 2) / 2 - imgy / 2) + ypad * 2, imgx, imgy };
-					//
-					//getFile = (focusimg->BuildFileTextureThread(renderer, &fullfile));
-	
 
+				if (i >= loaded_images) {
+					return false;
+				}
+				else {
+					focusimg = images[i];
+					focus_index = i;
+				}
 				return true;
 			}
 		}
@@ -293,23 +243,17 @@ bool Grid::presentFocus(int mousex, int mousey) {
 	return false;
 }
 
-void Grid::renderFile() {
-	if (fullfile) {
-		//cout << "getFileText()" << focusimg->getFileText() << endl;
-		//cout << "renderer" << renderer << endl;
-		//cout << "focusrect" << &focusrect << endl;
-		//cout << "images.size() : " << images.size() << endl;
-		SDL_RenderCopy(renderer, focustext , NULL, &focusrect);
+
+Image* Grid::GetFocusImage(int offset) {
+	
+	if ((focus_index+offset) < 0 || (focus_index + offset) > (loaded_images-1)) {
+		
 	}
 	else {
-		SDL_RenderCopy(renderer, focusimg->getThumbText(), NULL, &focusrect);
-		loadfile = 1;
-		//getFile.join();	//Defeats the purpose of multithreading
-
+		focus_index += offset;
 	}
-}
 
-Image* Grid::GetFocusImage() {
+	focusimg = images[focus_index];
 	return focusimg;
 };
 
@@ -326,29 +270,33 @@ bool Grid::requireRefresh() {
 };
 
 void Grid::BuildNextImages(int n) {
+	g_lock.lock();
+	cout << "starting image build" << endl;
 	vector<string> newids;
 	for (int i = 0; i < n; i++) {
 		string temp = fileids.back();
 		newids.push_back(temp);
 		fileids.pop_back();
 	}
+
+	//Create new hydrus client so the thread has it's own.
+	
+
 	//create array of images
-	vector<Image> newimages = hydrus.createImages(newids);
+
+	vector<Image*> newimages = hydrus.createImages(newids);
+	//skipping creaton of local variable to use directly in loop
 
 	for (auto& image : newimages) {
-		image.getThumbPath();
 		images.push_back(image);
-		
+		image->generateThumb();
 	}
-
+	g_lock.unlock();
 }
 void Grid::BuildTextVect(int n) {
 	int size = images.size();
-
 	for (size_t i = size - n; i < size; i++) {
-		SDL_Surface* sur = IMG_Load((images[i].getThumbPath()).c_str());
-		images[i].setThumbText(SDL_CreateTextureFromSurface(renderer, sur));
-		SDL_FreeSurface(sur);
+		images[i]->BuildThumbTexture(renderer);
 	}
 	cout << "built " << n << " Textures" << endl;
 }
@@ -358,6 +306,7 @@ void Grid::BuildRectVect(int max, int& x, int& y, int offset) {
 		if (x < 1700) {
 			SDL_Rect temprect = { x, y + offset, xthumb, ythumb };
 			rects.push_back(temprect);
+			image_boarder.push_back(temprect);
 			x += xthumb + xpad;
 		}
 		else {
@@ -368,11 +317,42 @@ void Grid::BuildRectVect(int max, int& x, int& y, int offset) {
 	}
 	cout << "Done building " << max - size << " rectangles" << endl;
 }
+void Grid::FitRectsToImages(int load) {
+	int width;
+	int height;
+	int x_origin;
+	int y_origin;
+
+	for (size_t k = loaded_images; k < (loaded_images+load); k++) {
+		SDL_QueryTexture(images[k]->getThumbText(), NULL, NULL, &width, &height);
+		rects[k].w = width;
+		rects[k].h = height;
+
+		x_origin = rects[k].x;
+		y_origin = rects[k].y;
+
+		if (width < xthumb) {
+			x_origin += (xthumb - width) / 2;
+		}
+		if (height < ythumb) {
+			y_origin += (ythumb - height) / 2;
+		}
+
+		rects[k].x = x_origin;
+		rects[k].y = y_origin;
+
+
+	}
+
+};
 int Grid::findBottomPos(int depth) {
-	int maxperrow = (WIDTH / (xthumb + xpad));
-	int maxrows = floor(depth / maxperrow);
-	if (depth % maxperrow != 0) { maxrows++; }
-	return std::min(-((maxrows * (ypad + ythumb)) + ypad * 3 - HEIGHT), 0);
+	int maxrows = floor(depth / max_img_per_row);
+	if (depth % max_img_per_row != 0) { maxrows++; }
+	return std::min(-((maxrows * (ypad + ythumb)) + 100 + ypad - HEIGHT), 0);
+}
+
+int Grid::FileCount() {
+	return total_images;
 }
 
 void Grid::DeleteImageFromHydrus() {

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include <json.hpp>
+#include "User.hpp"
 
 class Image;
 
@@ -19,24 +20,27 @@ class HydrusCall {
 private:
 	static const int DEFAULT_BUFLEN = 8192;
 	int port;
-	string host;
-	string api_key;
+	static string host;
+	static string api_key;
+	static User* user;
 	struct addrinfo* ptr;
 	json j;
 
 	SOCKET createSocket();
 	void connectToSocket(SOCKET* s);
 	void sendRequest(SOCKET socket, const char* msg);
-	string receiveData(SOCKET socket);
+	string receiveData(SOCKET socketint, int size = 1000000);
 	void formatJsontoImage(string& str);
 	vector<string> grabExt(std::string& str);
 
 public:
 	HydrusCall(int p);
+	HydrusCall(User* u);
 	vector<string> query(vector<string> tags);
-	std::vector<Image> createImages(std::vector<std::string> strings);
-	string getFileById(string id);
+	std::vector<Image*> createImages(std::vector<std::string> strings);
+	string getFileById(string id, int size = 1000000);
 	string getThumbById(string id);
 	void deleteFile(string hash);
+
 	~HydrusCall();
 };

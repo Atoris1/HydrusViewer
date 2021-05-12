@@ -1,8 +1,11 @@
 #pragma once
-#include "TagBox.cpp"
 #include "Tag.hpp"
 
-Tag::Tag(SDL_Renderer* rend, std::string text, TTF_Font* f, SDL_Color c, int m): renderer(rend), tag(text), font(f), color(c), max_length_pixels(m), text(NULL) {
+Tag::Tag(SDL_Renderer* rend, std::string text, TTF_Font* f, SDL_Color c, int m): renderer(rend), tag(text), font(f), color(c), max_length_pixels(m), text(NULL), autocolor(true) {
+
+};
+
+Tag::Tag(SDL_Renderer* rend, std::string text, TTF_Font* f, SDL_Color c, int m, bool autoc) : renderer(rend), tag(text), font(f), color(c), max_length_pixels(m), text(NULL), autocolor(autoc) {
 };
 
 SDL_Texture* Tag::getTexture() {
@@ -19,17 +22,20 @@ void Tag::update() {
 	}
 	if (text != NULL) {
 		SDL_DestroyTexture(text);
+		text = NULL;
 	}
-	else {
-		initColor();
+	if(text == NULL){
+		if (autocolor) {
+			initColor();
+		}
 		SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, tag.c_str(), color, max_length_pixels);
 		text = SDL_CreateTextureFromSurface(renderer, surface);
-		printf("Error : %s\n", TTF_GetError());
 		SDL_FreeSurface(surface);
 	}
 };
 
 void Tag::initColor() {
+
 	if (tag.substr(0, 5) == "chara") {
 		color = { 17,137,27 };
 	}
@@ -51,11 +57,34 @@ void Tag::initColor() {
 	else if (tag.substr(0, 5) == "pecor") {
 		color = { 250,157,32 };
 	}
+	else if (tag.substr(0, 5) == "loli") {
+		color = { 232,151,237 };
+	}
+
+	//Special conditions
+	if (tag.size() > 9) {
+		if (tag.substr(10, 5) == "nagat") {
+			color = { 200,34,48 };
+
+
+		}
+	}
+	
+
+
 };
 
-void Tag::Destroy() {
+void Tag::setColor(SDL_Color c) {
+	color = c;
+};
+
+void Tag::setMaxWidth(int m) {
+	max_length_pixels = m;
+	update();
+};
+
+Tag::~Tag() {
 	if (text != NULL) {
 		SDL_DestroyTexture(text);
 	}
 };
-

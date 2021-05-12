@@ -27,33 +27,17 @@
 #pragma comment (lib, "AdvApi32.lib")
 using namespace std;
 
+std::string HydrusCall::host = "";
+std::string HydrusCall::api_key = "";
+User* HydrusCall::user = NULL;
+
 
 HydrusCall::HydrusCall(int p) {
 	port = p;
 	int iResult;
-	//Open file for writing
 
-	fstream file;
-	file.open("host.txt", ios::in);
-	if (!file) {
-		cout << "No host file to read ip from defaulting to localhost" << endl;
-		host = "localhost";
-	}
-	else {
-		std::getline(file, host);
-	}
-	file.close();
-	cout << "host is : " << host << endl;
-
-	file.open("key.txt", ios::in);
-	if (!file) {
-		cout << "No key file to read from defaulting to 974**********************************************************05c" << endl;
-		api_key = "974de46c1cc09019910b6373a91577a2c0f20542fe99fba740c439fad7bbe05c";
-	}
-	else {
-		std::getline(file, api_key);
-	}
-	cout << "key is : " << api_key << endl;
+	//cout << "host is : " << host << endl;
+	//cout << "key is : " << api_key << endl;
 
 	//Init winsock
 	WSAData wsaData;
@@ -74,6 +58,7 @@ HydrusCall::HydrusCall(int p) {
 	hints.ai_protocol = IPPROTO_TCP;
 
 
+
 	// Resolve the server address and port
 	iResult = getaddrinfo(host.c_str(), "45869", &hints, &result);
 	if (iResult != 0) {
@@ -85,6 +70,83 @@ HydrusCall::HydrusCall(int p) {
 	// the call to getaddrinfo
 	ptr = result;
 
+};
+
+HydrusCall::HydrusCall(User* u) {
+	host = u->j["host"].get<string>();
+	api_key = u->j["api-key"].get<string>();
+	user = u;
+
+	int iResult;
+
+
+	//Init winsock
+	WSAData wsaData;
+	WORD DDLLVersion = MAKEWORD(2, 1);
+
+	if (WSAStartup(DDLLVersion, &wsaData) != 0) {
+		cout << "Socket initilzation failure" << endl;
+	}
+
+	//Find addr info
+	//Create Socket
+	struct addrinfo* result = NULL;
+	struct addrinfo hints;
+
+	std::ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+
+	SOCKET ConnectSocket = INVALID_SOCKET;
+	
+
+	while (ConnectSocket == INVALID_SOCKET) {
+		while (ptr == NULL) {
+			// Resolve the server address and port
+			iResult = getaddrinfo(host.c_str(), "45869", &hints, &result);
+			if (iResult != 0) {
+				printf("getaddrinfo failed: %d\n", iResult);
+				WSACleanup();
+
+			}
+
+			// Attempt to connect to the first address returned by
+			// the call to getaddrinfo
+			ptr = result;
+			if (ptr == NULL) {
+				cerr << "Host not at location <" << host.c_str() << "> found! \nPlease enter a new host : " << endl;
+				std::cin >> host;
+				WSACleanup();
+				if (WSAStartup(DDLLVersion, &wsaData) != 0) {
+					cout << "Socket initilzation failure" << endl;
+				}
+				user->j["host"] = host;
+				user->saveSettings();
+			}
+		}
+		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
+			ptr->ai_protocol);
+
+		cout << "Attempting connection to socket (20 seconds)" << endl;
+		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		if (iResult == SOCKET_ERROR) {
+			printf("Error at socket(): %ld\n", WSAGetLastError());
+			cout << "Host is invalid : " << host << endl;
+			WSACleanup();
+			ptr = NULL;
+			host = "invalid";
+			ConnectSocket = INVALID_SOCKET;
+			if (WSAStartup(DDLLVersion, &wsaData) != 0) {
+				cout << "Socket initilzation failure" << endl;
+			}
+		}
+	}
+
+
+
+	cout << "socket connection established" << endl;
 };
 
 //Creates a socket object
@@ -110,6 +172,8 @@ void HydrusCall::connectToSocket(SOCKET* s) {
 	int iResult = connect(*s, ptr->ai_addr, (int)ptr->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
 		cout << "Connection to socket failed" << endl;
+		cerr << "!Warning fatal error socket connection has failed" << endl;
+		system("pause");
 		closesocket(*s);
 		*s = INVALID_SOCKET;
 	}
@@ -136,15 +200,16 @@ void HydrusCall::sendRequest(SOCKET socket, const char* msg) {
 };
 
 //Receives the data from a socket and outputs it into a string unformatted after a get/post request.
-std::string HydrusCall::receiveData(SOCKET socket) {
+std::string HydrusCall::receiveData(SOCKET socket, int size) {
 	//Result variable
 	int iResult;
 
 	//Create buffer for receiving data
 	char szBuffer[DEFAULT_BUFLEN];
-	char* data = (char*)malloc(sizeof(char)*80000000);
+	cout << "Mallocing " << size << " data." << endl;
+	char* data = (char*)malloc(sizeof(char)* size);
 	if (data == NULL) {
-		cout << "MALLOC FAILED" << endl;
+		cout << "MALLOC FAILED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << endl << endl << endl << endl;
 	}
 	memset(&szBuffer, 0, DEFAULT_BUFLEN);
 	int totalbytes = 0;
@@ -159,7 +224,7 @@ std::string HydrusCall::receiveData(SOCKET socket) {
 			totalbytes += iResult;
 		}
 		else if (iResult == 0) {
-			printf("Connection closed\n");
+			//printf("Connection closed\n");
 		}
 		else {
 			printf("recv failed with error: %d\n", WSAGetLastError());
@@ -168,6 +233,7 @@ std::string HydrusCall::receiveData(SOCKET socket) {
 		i++;
 	} while (iResult > 0);
 	cout << "totaldata : " << totalbytes << endl;
+	//std::this_thread::sleep_for(std::chrono::seconds(2));
 	data[totalbytes+1] = NULL;
 	string output(data, totalbytes);
 
@@ -299,8 +365,8 @@ vector<string> HydrusCall::query(vector<string> tags) {
 	return fileIds;
 }
 	
-std::vector<Image> HydrusCall::createImages(std::vector<std::string> strings) {
-	vector<Image> images;
+std::vector<Image*> HydrusCall::createImages(std::vector<std::string> strings) {
+	vector<Image*> images;
 	cout << "Gathering image metatdata" << endl;
 	if (strings.size() == 0)
 	{
@@ -348,7 +414,7 @@ std::vector<Image> HydrusCall::createImages(std::vector<std::string> strings) {
 
 
 	for (int i = 0; i < strings.size(); i++) {
-		//cout << j["metadata"][i] << endl << endl;;
+		//cout << j["metadata"][i]["size"].get<int>() << endl << endl;;
 		//cout << j["metadata"][i]["service_names_to_statuses_to_display_tags"]["my tags"] << endl << endl;
 		//cout << j["metadata"][i]["service_names_to_statuses_to_display_tags"]["my tags"]["0"] << endl << endl;
 		vector<string> tags;
@@ -365,9 +431,9 @@ std::vector<Image> HydrusCall::createImages(std::vector<std::string> strings) {
 				pos += 1;
 			}
 		}
-		Image temp(strings[i], j["metadata"][i]["ext"].get<std::string>(), tags, j["metadata"][i]["hash"].get<string>());
-		images.push_back(temp);
-		//std::this_thread::sleep_for(std::chrono::seconds(100));
+
+		images.push_back(new Image(to_string(j["metadata"][i]["file_id"].get<int>()), j["metadata"][i]["ext"].get<std::string>(), tags, j["metadata"][i]["hash"].get<string>(), j["metadata"][i]["size"].get<int>()));
+		//std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 	j.clear();
 
@@ -376,7 +442,7 @@ std::vector<Image> HydrusCall::createImages(std::vector<std::string> strings) {
 	return images;
 }
 
-string HydrusCall::getFileById(string id) {
+string HydrusCall::getFileById(string id, int size) {
 	//Creating and connecting to socket
 	SOCKET socket = createSocket();
 	connectToSocket(&socket);
@@ -385,14 +451,14 @@ string HydrusCall::getFileById(string id) {
 	string query = "GET /get_files/file?file_id=" + id +"&Hydrus-Client-API-Access-Key=" + api_key + " / \r\n\r\n";
 
 	//Convert string into an array char
-	int size = query.size();
+	int size_temp = query.size();
 	char* data;
-	data = (char*)malloc(size * sizeof(char));
-	query.copy(data, size);
+	data = (char*)malloc(size_temp * sizeof(char));
+	query.copy(data, size_temp);
 
 	//Send request and receivce output to a string
 	sendRequest(socket, data);
-	string output = receiveData(socket);
+	string output = receiveData(socket, size);
 	free(data);
 		
 	//Format image data accordingly
@@ -462,6 +528,7 @@ void HydrusCall::deleteFile(string hash) {
 	//cout << "Deleted image with message :" << endl << output << endl;
 
 };
+
 
 HydrusCall::~HydrusCall(){
 	freeaddrinfo(ptr);

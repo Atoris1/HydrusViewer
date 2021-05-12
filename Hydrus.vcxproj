@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -100,6 +100,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\Atoris\source\repos\Hydrus\Hydrus;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,12 +123,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\Atoris\source\repos\Hydrus\Hydrus</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDl2.lib;SDL2_mixer.lib;SDL2_image.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
+      <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,6 +146,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\Atoris\source\repos\Hydrus\Hydrus;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -167,33 +172,55 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\Atoris\source\repos\Hydrus\Hydrus</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDl2.lib;SDL2_mixer.lib;SDL2_image.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Div.cpp" />
     <ClCompile Include="Grid.cpp" />
     <ClCompile Include="Grid.hpp" />
     <ClCompile Include="Hydrus.cpp" />
     <ClCompile Include="HydrusCall.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="LTimer.cpp" />
+    <ClCompile Include="MovableImage.cpp" />
+    <ClCompile Include="MovableRect.cpp" />
+    <ClCompile Include="NavBar.cpp" />
+    <ClCompile Include="RadioButton.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
+    <ClCompile Include="SearchBox.cpp" />
+    <ClCompile Include="SettingsView.cpp" />
     <ClCompile Include="Tag.cpp" />
-    <ClCompile Include="TagBox.cpp" />
     <ClCompile Include="TextBox.cpp" />
+    <ClCompile Include="User.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="ViewImage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Div.h" />
+    <ClInclude Include="LTimer.h" />
+    <ClInclude Include="MovableCircle.h" />
+    <ClInclude Include="MovableImage.h" />
+    <ClInclude Include="MovableRect.h" />
     <ClInclude Include="HydrusCall.hpp" />
     <ClInclude Include="Image.hpp" />
+    <ClInclude Include="NavBar.hpp" />
+    <ClInclude Include="RadioButton.h" />
     <ClInclude Include="RenderWindow.hpp" />
+    <ClInclude Include="SearchBox.hpp" />
+    <ClInclude Include="SettingsView.hpp" />
     <ClInclude Include="Tag.hpp" />
     <ClInclude Include="TextBox.hpp" />
+    <ClInclude Include="User.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

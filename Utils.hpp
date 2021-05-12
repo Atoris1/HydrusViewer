@@ -4,7 +4,52 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+
+#include <SDL.h>
+
+using namespace std;
+
+
 #include <string>
+
+class TextBox;
+class Grid;
+class User;
+class ViewImage;
+
+//Struct containing an x and y coordinate or velocity vector.
+struct Vector2f {
+	int x;
+	int y;
+};
+
+
+//Enum defining the return value from the Settings handleClick() function
+enum setting_state {
+	NOCLICK = 0,
+	DOWNLOAD = 1,
+	FAVORITE = 2,
+	DELETE_IMAGE = 3,
+	UNFAVORITE = 4,
+	TEXTBOX_SELECT = 5
+};
+
+
 
 
 std::vector<std::string> createTagsFromString(std::string& str);
+
+bool rectangleColision(SDL_Rect& rect, Vector2f& pos);
+bool circleColision(SDL_Rect& rect, Vector2f& pos);
+
+void threaded_image_destruction(ViewImage* viewimage);
+bool vectContains(std::vector<int>& vect, int item);
+void callErrorMessage(TextBox* notification_box, string message);
+
+
+bool callImageDelete(TextBox* notification_box, Grid* grid, bool focus);
+bool callImageSave(TextBox* notification_box, Grid* grid, bool focus, User* u);
+bool callImageFavorite(TextBox* notification_box, Grid* grid, bool focus, User* u);
+
+std::vector<string> underscoresToSpaces(std::vector<string> input);
+string spaceToUnderscore(string input);
