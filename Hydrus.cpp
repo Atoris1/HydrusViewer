@@ -203,7 +203,9 @@ int main(int argc, char* argv[]) {
 
 
 		//Calling all display methods here
-		if (grid.requireRefresh() || force_grid_refresh) {
+		//fix this later
+		//if (grid.requireRefresh() || force_grid_refresh) {
+		if (true) {
 			SDL_RenderClear(renderer);
 			grid.renderThumbs();
 			force_grid_refresh = false;
@@ -318,7 +320,6 @@ int main(int argc, char* argv[]) {
 					if (tag_text != " ") {
 						std::vector<WeightedTag> temp;
 						topbar.updatePredicictions(underscoresToSpaces(tag_text));
-						topbar.ddm.activate();
 					}
 					
 
@@ -350,7 +351,7 @@ int main(int argc, char* argv[]) {
 					if (tag_text != " ") {
 						std::vector<WeightedTag> temp;
 						topbar.updatePredicictions(underscoresToSpaces(tag_text));
-						topbar.ddm.activate();
+						
 					}
 
 
@@ -369,6 +370,7 @@ int main(int argc, char* argv[]) {
 						topbar.img_count.autoRect();
 						callBufferClear(view_img_buffers);
 						focus = false;
+						topbar.ddm.deactivate();
 					}
 					if (activeTextBox == settings.getActiveTextbox()) {
 						settings.saveData();
@@ -524,6 +526,7 @@ int main(int argc, char* argv[]) {
 						break;
 					}
 					
+					
 					s_state = topbar.handleClick(mouse_pos);
 					switch (s_state) {
 					case(0):
@@ -534,9 +537,12 @@ int main(int argc, char* argv[]) {
 						activeTextBox->activate();
 						break;
 					case(2):
+						//topbar.ddm.activate();
 						break;
 					}
-
+					if (s_state == 2) {
+						break;
+					}
 
 					
 

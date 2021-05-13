@@ -1,5 +1,6 @@
 #include "MovableRect.h"
 #include <math.h> 
+#include <algorithm>
 
 MovableRect::MovableRect(SDL_Rect* source_rect) : rect(source_rect), dx(new float(0)), dy(new float(0)), dest({ 0,0 }) {
 	inherit_velocity = false;
@@ -173,7 +174,7 @@ void MovableRect::removeVelocity() {
 
 void MovableRect::grow(Vector2f offset, int interval) {
 	if ((rect->w != dest_size.x || rect->h != dest_size.y)) {
-		growth_rate = std::abs(rect->w - dest_size.x);
+		growth_rate = std::max(std::abs(rect->w - dest_size.x), std::abs(rect->h - dest_size.y));
 		updateGrowth();
 	}
 
@@ -196,7 +197,7 @@ void MovableRect::grow(Vector2f offset, int interval) {
 void MovableRect::updateGrowth() {
 	if (rect->w == dest_size.x && rect->h == dest_size.y) { return; }
 
-	cout << "before movement w,h is -> " << rect->w << "," << rect->h << endl;
+	//cout << "before movement w,h is -> " << rect->w << "," << rect->h << endl;
 
 
 	x_movement = updateSizeInt(&rect->w, dest_size.x);
@@ -210,7 +211,7 @@ void MovableRect::updateGrowth() {
 
 
 
-	cout << "New w,h is -> " << rect->w << "," << rect->h << endl;
+	//cout << "New w,h is -> " << rect->w << "," << rect->h << endl;
 	//cout << "moved <" << x_movement/2 << "> left" << endl;
 	//cout << "moved <" << y_movement/2 << "> up" << endl;
 

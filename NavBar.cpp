@@ -12,7 +12,7 @@ NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string>
 	fonts(f),
 	top_bar(new SDL_Rect{ 0, 0, w, 100 }),
 	fuckbox(new SDL_Rect{ 0, 0, w, 100 }, r),
-	ddm({ 550,85,700,0}, r),
+	ddm({ 625,85,700,0}, r),
 	TPE()
 	{
 
@@ -51,10 +51,11 @@ NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string>
 		t->setRect({ 0, 0, 550, 20 });
 		t->setColor({ 255,255,255,220 });
 		t->setMargins(15, 15, 15, 0);
+		//t->setBoxImage("button.png");
 		t->setFont("search.ttf", 30);
 		t->addTag(spaceToUnderscore("Penis music :)"));
 		t->addTag("1");
-		t->box = true;
+		t->box = false;
 		textboxes.push_back(t);
 	}
 
@@ -65,6 +66,7 @@ NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string>
 
 
 	div = new Div(new MovableRect(new SDL_Rect({100,100,600,400})), renderer);
+	div->setMargins(25, 20, 10, 50);
 	
 	for (auto& tt : textboxes) {
 		div->addRect(tt);
@@ -82,6 +84,7 @@ void NavBar::updatePredicictions(string base) {
 	std::vector<WeightedTag> predictions = TPE.getPrediction(base, 5);
 
 	cout << "Prediction sizes : " << predictions.size() << endl;
+	cout << "DDM is active ? : " << ddm.enabled() << endl;
 
 	for (int i = 0; i < predictions.size(); i++) {
 		textboxes[i]->pop_back();
@@ -93,8 +96,18 @@ void NavBar::updatePredicictions(string base) {
 
 	div->showElement(0, predictions.size());
 	div->hideElement(predictions.size(), 5 - predictions.size());
-	ddm.recalculateHeight();
 
+	if (predictions.size() != 0) {
+		ddm.recalculateHeight();
+	}
+
+
+	if (predictions.size() == 0) {
+		ddm.deactivate();
+	}
+	else {
+		ddm.activate();
+	}
 
 };
 
@@ -146,22 +159,24 @@ void NavBar::moveToPosition(Vector2f destination, Vector2f velocity) {
 };
 
 int NavBar::handleClick(Vector2f mousepos) {
-	for (auto& t : textboxes) {
-		if (t->handleClick(mousepos)) {
-			search_bar.pop_back();
-			active_tag = t->getText();
-			search_bar.addTag(spaceToUnderscore(t->getTags()[0]));
-			cout << "adding tag <" << t->getTags()[0] << ">" << endl;
-			search_bar.update();
+	if (ddm.enabled()) {
+		for (auto& t : textboxes) {
+			if (t->handleClick(mousepos)) {
+				search_bar.pop_back();
+				active_tag = t->getText();
+				search_bar.addTag(spaceToUnderscore(t->getTags()[0]));
+				cout << "adding tag <" << t->getTags()[0] << ">" << endl;
+				search_bar.update();
 
-			return 2;
+				return 2;
+			}
 		}
 	}
+	
 
 
 
 	if (search_bar.handleClick(mousepos)) {
-		ddm.activate();
 		return 1;
 	}
 	else {
