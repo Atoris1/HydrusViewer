@@ -9,7 +9,6 @@ User::User() {
 	string buffer;
 	
 	namespace fs = std::filesystem;
-	fs::create_directories("Saved");
 	fs::create_directories("files/thumbs");
 
 
