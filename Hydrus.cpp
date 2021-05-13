@@ -27,6 +27,7 @@
 #include <cctype>
 #include <sstream>
 #include "ViewImage.cpp"
+#include "TextPredictionEngine.hpp"
 
 
 using namespace std;
@@ -50,7 +51,7 @@ const int ypad = xthumb / 4; //Y-axis padding
 int main(int argc, char* argv[]) {
 
 	User u;
-	
+	TextPredictionEngine TPE;
 	HydrusCall a (&u);
 
 	std::map<std::string, std::string> fonts;
@@ -116,6 +117,13 @@ int main(int argc, char* argv[]) {
 	ViewImage* prev_img_buffer = NULL;
 	ViewImage* next_img_buffer = NULL;
 
+	//The FORBIDDEN	double pointer
+	//We use this because we want to know what pointer each of our items points to
+	//So we don't care about where the image is pointing to right now we want to always know where our image is pointing to
+	//If we used single pointers these values would never change they would always point to NULL
+	//But double pointers allow us to see the memory value that hold the memory address of a ViewImage so we can dynamicly
+	//see where we are pointing to.
+	std::vector<ViewImage**> view_img_buffers = {&large_image, &prev_img_buffer, &next_img_buffer};
 	
 
 	//Settings view
@@ -306,6 +314,16 @@ int main(int argc, char* argv[]) {
 						tag_text += (char)(*e.text.text);
 						//tag_text += (char)tolower(*e.text.text);
 					}
+
+					if (tag_text != " ") {
+						std::vector<WeightedTag> temp;
+						topbar.updatePredicictions(underscoresToSpaces(tag_text));
+						topbar.ddm.activate();
+					}
+					
+
+
+
 					
 					activeTextBox->addTag(tag_text); //push back onto the tag stack
 					textrender = true;
@@ -329,19 +347,27 @@ int main(int argc, char* argv[]) {
 						tag_text = tag_text.substr(0, tag_text.size() - 1);
 					}
 
+					if (tag_text != " ") {
+						std::vector<WeightedTag> temp;
+						topbar.updatePredicictions(underscoresToSpaces(tag_text));
+						topbar.ddm.activate();
+					}
+
+
+
 					activeTextBox->addTag(tag_text); //push back onto the tag stack
 					textrender = true;
 					activeTextBox->update();
 				}
 
 				//Load new set of images on enter key hit
-				else if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_RETURN2) {
+				else if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER) {
 
 					if (activeTextBox == &topbar.search_bar) {
 						grid.search(topbar.search_bar.getText());
 						topbar.img_count.setTag("Results found : " + to_string(grid.FileCount()));
 						topbar.img_count.autoRect();
-						large_image = NULL;
+						callBufferClear(view_img_buffers);
 						focus = false;
 					}
 					if (activeTextBox == settings.getActiveTextbox()) {
@@ -394,7 +420,7 @@ int main(int argc, char* argv[]) {
 							large_image->enterView(1);
 
 							
-							tagbox.setPos({ 0, 100 });
+							tagbox.moveToPosition({ 0, 100 }, { 0, 50 });
 							tagbox.setTags(underscoresToSpaces(grid.GetFocusImage()->getTags()));
 							
 						}
@@ -404,7 +430,10 @@ int main(int argc, char* argv[]) {
 				//Handle the right arrow key being pressed
 				else if (e.key.keysym.sym == SDLK_RIGHT) {
 					if (focus) {
-						if (grid.GetFocusImage(0) != grid.GetFocusImage(1)) {
+						//Disgusting compiler weirdness here requiring a temp variable due to the nature of getfocusImage changing the foucs image.
+						Image* temp = grid.GetFocusImage(0);
+						if (temp != grid.GetFocusImage(1)) {
+							cout << "right image slide being called" << endl;
 							settings.setImage(grid.GetFocusImage());
 							//If going right we send our current image to the left and our previous image to the left;
 
@@ -430,7 +459,7 @@ int main(int argc, char* argv[]) {
 							large_image->enterView(-1);
 
 
-							tagbox.setPos({ 0, 100 });
+							tagbox.moveToPosition({ 0, 100 }, {0, 50});
 							tagbox.setTags(underscoresToSpaces(grid.GetFocusImage()->getTags()));
 							
 						}
@@ -479,6 +508,20 @@ int main(int argc, char* argv[]) {
 						activeTextBox = settings.getActiveTextbox();
 						activeTextBox->activate();
 						break;
+					case(FAVORITE_SEARCH):
+						cout<<"running search" << endl;
+						if (activeTextBox == &topbar.search_bar) {
+							std::vector<string> query;
+							for (auto& id : u.j["favorites"].get<vector<int>>()) {
+								query.push_back(to_string(id));
+							}
+							grid.fileIdSearch(query);
+							topbar.img_count.setTag("Results found : " + to_string(grid.FileCount()));
+							topbar.img_count.autoRect();
+							callBufferClear(view_img_buffers);
+							focus = false;
+						}
+						break;
 					}
 					
 					s_state = topbar.handleClick(mouse_pos);
@@ -489,6 +532,8 @@ int main(int argc, char* argv[]) {
 						activeTextBox->deactivate();
 						activeTextBox = &topbar.search_bar;
 						activeTextBox->activate();
+						break;
+					case(2):
 						break;
 					}
 
@@ -551,6 +596,7 @@ int main(int argc, char* argv[]) {
 					settings.deactivateImageOptions();
 					settings.deactivate();
 					
+					callBufferClear(view_img_buffers);
 
 					
 					focus = false;

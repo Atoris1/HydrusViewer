@@ -123,6 +123,18 @@ bool callImageFavorite(TextBox* notification_box, Grid* grid, bool focus, User* 
 	notification_box->moveToPosition({ 1920 / 2 - 200, 1080 }, { 25, 25 }, 2); // move to bottom of screen after 2 sec delay
 }
 
+void callBufferClear(std::vector<ViewImage**> viewimages) {
+	for (auto& v : viewimages) {
+		cout << "Buffer memory location is -> " << *v << endl;
+		if (*v) {
+			delete *v;
+			*v = NULL;
+
+		}
+		cout << "Buffer memory location after clear is -> " << *v << endl;
+	}
+};
+
 void callErrorMessage(TextBox* notification_box, string message) {};
 
 
@@ -134,6 +146,16 @@ std::vector<string> underscoresToSpaces(std::vector<string> input) {
 			tag.replace(pos, 1, " ");
 			pos += 1;
 		}
+	}
+	return temp;
+}
+
+string underscoresToSpaces(string input) {
+	string temp = input;
+	int pos = 0;
+	while ((pos = temp.find("_", pos)) != string::npos) {
+		temp.replace(pos, 1, " ");
+		pos += 1;
 	}
 	return temp;
 }

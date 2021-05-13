@@ -192,16 +192,20 @@ vector<std::string> TextBox::getTags() {
 };
 
 void TextBox::setRect(SDL_Rect rectangle) {
+	int original_width = width;
 	box_rect = rectangle;
 	x_origin = box_rect.x;
 	y_origin = box_rect.y;
 	width = box_rect.w;
 	height = box_rect.h;
 	max_tag_width = rectangle.w - left_m - right_m;
-	dest = { x_origin, y_origin };
-	for (auto& tag : tags) {
-		tag->setMaxWidth(max_tag_width);
+	//dest = { x_origin, y_origin };
+	if (original_width != width) {
+		for (auto& tag : tags) {
+			tag->setMaxWidth(max_tag_width);
+		}
 	}
+
 };
 void TextBox::setColor(SDL_Color c) {
 	color = c;
@@ -249,11 +253,12 @@ void TextBox::setPos(Vector2f pos) {
 	box_rect.x = pos.x;
 	box_rect.y = pos.y;
 };
-void TextBox::setBoxImage(std::string path ,int alpha) {
+void TextBox::setBoxImage(std::string path ,int alpha, int r , int g , int b) {
 	std::string p = "Resources/sys_data/" + path;
 	SDL_Surface* sur = IMG_Load(p.c_str());
 	texture = (SDL_CreateTextureFromSurface(renderer, sur));
 	SDL_SetTextureAlphaMod(texture, alpha);
+	SDL_SetTextureColorMod(texture, r, g, b);
 	SDL_FreeSurface(sur);
 	return;
 }
@@ -313,7 +318,6 @@ void TextBox::moveWait(Vector2f destination, Vector2f velocity, int time) {
 void TextBox::updateMovement() {
 
 	if (dy == 0 && dx == 0) { return; }
-	
 
 	int int_dy = floor(dy);
 

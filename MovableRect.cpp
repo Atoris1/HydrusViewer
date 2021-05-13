@@ -196,19 +196,21 @@ void MovableRect::grow(Vector2f offset, int interval) {
 void MovableRect::updateGrowth() {
 	if (rect->w == dest_size.x && rect->h == dest_size.y) { return; }
 
-	//cout << "before movement w,h is -> " << rect->w << "," << rect->h << endl;
+	cout << "before movement w,h is -> " << rect->w << "," << rect->h << endl;
 
 
 	x_movement = updateSizeInt(&rect->w, dest_size.x);
 	y_movement = updateSizeInt(&rect->h, dest_size.y);
 
-	
-	rect->x -= x_movement / 2;
-	rect->y -= y_movement / 2;
+	if (grow_in_place) {
+		rect->x -= x_movement / 2;
+		rect->y -= y_movement / 2;
+	}
 
 
 
-	//cout << "New w,h is -> " << rect->w << "," << rect->h << endl;
+
+	cout << "New w,h is -> " << rect->w << "," << rect->h << endl;
 	//cout << "moved <" << x_movement/2 << "> left" << endl;
 	//cout << "moved <" << y_movement/2 << "> up" << endl;
 

@@ -4,13 +4,14 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-
+#include <map>
+#include <string>
 #include <SDL.h>
 
 using namespace std;
 
 
-#include <string>
+
 
 class TextBox;
 class Grid;
@@ -31,7 +32,8 @@ enum setting_state {
 	FAVORITE = 2,
 	DELETE_IMAGE = 3,
 	UNFAVORITE = 4,
-	TEXTBOX_SELECT = 5
+	TEXTBOX_SELECT = 5,
+	FAVORITE_SEARCH = 6,
 };
 
 
@@ -50,6 +52,8 @@ void callErrorMessage(TextBox* notification_box, string message);
 bool callImageDelete(TextBox* notification_box, Grid* grid, bool focus);
 bool callImageSave(TextBox* notification_box, Grid* grid, bool focus, User* u);
 bool callImageFavorite(TextBox* notification_box, Grid* grid, bool focus, User* u);
+void callBufferClear(std::vector<ViewImage**> viewimages);
 
+string underscoresToSpaces(string input);
 std::vector<string> underscoresToSpaces(std::vector<string> input);
 string spaceToUnderscore(string input);

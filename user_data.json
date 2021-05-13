@@ -1,8 +1,7 @@
 {
     "api-key": "75f454d20bfcea8aa60ae8f4843c0ecdc9ee0e6f3888b7b2f38813a0a36042ee",
     "default_search": [
-        "pecorepo",
-        "large_breasts"
+        "breast_press"
     ],
     "favorites": [
         57412059,
@@ -13,12 +12,13 @@
         57543210,
         45934440,
         50464305,
-        55881321
+        55881321,
+        13779002
     ],
     "host": "192.168.1.110",
     "name": "User",
     "save_directory": "Saved_Images",
-    "spongebob": true,
+    "spongebob": false,
     "window_height": 1080,
     "window_width": 1920
 }

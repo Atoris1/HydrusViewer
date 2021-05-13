@@ -47,7 +47,7 @@ void  User::buildFile() {
 	std::fstream file1;
 	file1.open("host.txt", std::ios::in);
 	if (!file1) {
-		host = "192.168.1.110";
+		host = "12.35.49.22";
 	}
 	else {
 		std::getline(file1, host);

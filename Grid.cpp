@@ -89,6 +89,69 @@ void Grid::search(string tags) {
 	refresh = true;
 };
 
+void Grid::search(std::vector<std::string> tags) {
+	//reset some variables;
+	dy = 0;
+	loaded_images = 0;
+	thread_started = false;
+	if (buildaheadimg.joinable()) { buildaheadimg.join(); }
+	minimg = 0;
+	maximg = 0;
+	x_rect_vect = xpad;
+	y_rect_vect = 100 + ypad;
+	yscreenpos -= yscreenpos;
+
+	//Clear all vectors
+	destroyImages();
+	rects.clear();
+	fileids.clear();
+
+	//Create query
+	vector<string> query_string = tags;
+
+	//Add our hard coded tags into our query
+	for (auto& tag : hard_tags) {
+		query_string.push_back(tag);
+	}
+
+	//Perform our search to get file_ids
+	fileids = hydrus.query(query_string);
+
+	//Set new limits
+	total_images = fileids.size();
+	minypos = findBottomPos(total_images);
+
+	//Theses changes require a refresh to screen.
+	refresh = true;
+};
+
+void Grid::fileIdSearch(std::vector<std::string> f) {
+	//reset some variables;
+	dy = 0;
+	loaded_images = 0;
+	thread_started = false;
+	if (buildaheadimg.joinable()) { buildaheadimg.join(); }
+	minimg = 0;
+	maximg = 0;
+	x_rect_vect = xpad;
+	y_rect_vect = 100 + ypad;
+	yscreenpos -= yscreenpos;
+
+	//Clear all vectors
+	destroyImages();
+	rects.clear();
+	fileids.clear();
+
+	fileids = f;
+
+	//Set new limits
+	total_images = fileids.size();
+	minypos = findBottomPos(total_images);
+
+	//Theses changes require a refresh to screen.
+	refresh = true;
+}
+
 void Grid::update() {
 	//Build more rects if getting close to having none
 	if (minimg + 70 > rects.size()) {

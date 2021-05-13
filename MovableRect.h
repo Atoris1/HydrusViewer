@@ -27,11 +27,13 @@ private :
 	int x_movement;
 	int y_movement;
 
+	
 
 
 	int updateSizeInt(int* c, int& d);
 
 public:
+	bool grow_in_place = true;
 	SDL_Rect* rect;
 	MovableRect(SDL_Rect* source_rect);
 	void moveToPosition(Vector2f destination, Vector2f velocity);

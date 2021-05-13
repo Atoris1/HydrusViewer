@@ -11,8 +11,12 @@ MovableImage::MovableImage(SDL_Rect* source_rect, SDL_Renderer* r): MovableRect(
 };
 
 void MovableImage::display(bool box) {
-	if (texture[texture_index]) {
+	if (texture.size() > 0) {
 		SDL_RenderCopy(renderer, texture[texture_index], NULL, rect);
+	}
+	else {
+		SDL_SetRenderDrawColor(renderer, 0,0,0,255);
+		SDL_RenderFillRect(renderer, rect);
 	}
 };
 

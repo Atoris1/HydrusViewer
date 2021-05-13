@@ -84,8 +84,19 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 
 
 		TextBox* tempbox = new TextBox(renderer);
+		tempbox->autosize = false;
+		tempbox->setRect({ x_origin, y_origin + 350, 350, 55 });
+		tempbox->setColor({ 255,255,255,220 });
+		tempbox->setMargins(80, 25, 13, 13);
+		tempbox->setFont("search.ttf", 30);
+		tempbox->addTag("Favorites <3");
+		tempbox->setBoxImage("smallbutton.png", 255);
+		tempbox->tag = "favorites";
+		textboxes.push_back(tempbox);
 
-		
+
+
+		tempbox = new TextBox(renderer);
 		tempbox->setRect({ x_origin + 25, y_origin + 350, width - 50, 50 });
 		tempbox->setColor({ 255,255,255,220 });
 		tempbox->setMargins(15, 15, 15, 15);
@@ -93,6 +104,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag("Hydrus api key :");
 		tempbox->addTag(u->j["api-key"].get<string>());
 		tempbox->editable = true;
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -103,6 +115,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag("\n");
 		tempbox->addTag("\n");
 		tempbox->addTag("Host ip address :");
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -113,6 +126,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag(u->j["host"].get<string>());
 		tempbox->editable = true;
 		tempbox->tag = "host";
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -125,6 +139,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag("Spongebob mode :");
 		tempbox->addTag(boolToString(u->j["spongebob"].get<bool>()));
 		tempbox->tag = "spongebob";
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -135,6 +150,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag("\n");
 		tempbox->addTag("\n");
 		tempbox->addTag("Default Search :");
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -150,6 +166,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->pop_back();
 		tempbox->editable = true;
 		tempbox->tag = "default_search";
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 
@@ -164,6 +181,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag(to_string(u->j["window_width"].get<int>()));
 		tempbox->addTag("x");
 		tempbox->addTag(to_string(u->j["window_height"].get<int>()));
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -174,6 +192,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag("\n");
 		tempbox->addTag("\n");
 		tempbox->addTag("Save Directory Path :");
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		tempbox = new TextBox(renderer);
@@ -185,6 +204,7 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		tempbox->addTag(u->j["save_directory"].get<string>());
 		tempbox->editable = true;
 		tempbox->tag = "save_directory";
+		tempbox->box = false;
 		textboxes.push_back(tempbox);
 
 		div.setBounds(new MovableRect(new SDL_Rect({ x_origin, y_origin + 100, width, height - 100 })));
@@ -205,12 +225,13 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 		div.addRect(textboxes[1]);
 		div.addRect(textboxes[2]);
 		div.addRect(textboxes[3]);
-		div.addDiv(temp);
 		div.addRect(textboxes[4]);
+		div.addDiv(temp);
 		div.addRect(textboxes[5]);
 		div.addRect(textboxes[6]);
 		div.addRect(textboxes[7]);
 		div.addRect(textboxes[8]);
+		div.addRect(textboxes[9]);
 
 		deactivateImageOptions();
 	};
@@ -437,6 +458,9 @@ SettingsView::SettingsView(SDL_Renderer* r, User* u) :
 							active_textbox = t;
 							
 							return TEXTBOX_SELECT;
+						}
+						if (t->tag == "favorites") {
+							return FAVORITE_SEARCH;
 						}
 					}
 				}

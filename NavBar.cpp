@@ -2,6 +2,7 @@
 #include "NavBar.hpp"
 
 
+
 NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string> f) :
 	renderer(r),
 	search_bar(r),
@@ -10,7 +11,9 @@ NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string>
 	height(h),
 	fonts(f),
 	top_bar(new SDL_Rect{ 0, 0, w, 100 }),
-	fuckbox(new SDL_Rect{ 0, 0, w, 100 }, r)
+	fuckbox(new SDL_Rect{ 0, 0, w, 100 }, r),
+	ddm({ 550,85,700,0}, r),
+	TPE()
 	{
 
 	//Image count text
@@ -41,10 +44,61 @@ NavBar::NavBar(SDL_Renderer* r, int w, int h, std::map<std::string, std::string>
 	SDL_Color topbarcolor = { 58, 205, 220 };
 	rects.push_back(&top_bar);
 
+	TextBox* t;
+	
+	for (int i = 0; i < 5; i++) {
+		t = new TextBox(renderer);
+		t->setRect({ 0, 0, 550, 20 });
+		t->setColor({ 255,255,255,220 });
+		t->setMargins(15, 15, 15, 0);
+		t->setFont("search.ttf", 30);
+		t->addTag(spaceToUnderscore("Penis music :)"));
+		t->addTag("1");
+		t->box = true;
+		textboxes.push_back(t);
+	}
 
+
+
+
+
+
+
+	div = new Div(new MovableRect(new SDL_Rect({100,100,600,400})), renderer);
+	
+	for (auto& tt : textboxes) {
+		div->addRect(tt);
+	}
+	
+	
+	ddm.setDiv(div);
 
 
 };
+
+void NavBar::updatePredicictions(string base) {
+	int index = 0;
+
+	std::vector<WeightedTag> predictions = TPE.getPrediction(base, 5);
+
+	cout << "Prediction sizes : " << predictions.size() << endl;
+
+	for (int i = 0; i < predictions.size(); i++) {
+		textboxes[i]->pop_back();
+		textboxes[i]->pop_back();
+		textboxes[i]->addTag(predictions[i].tag);
+		textboxes[i]->addTag(to_string(predictions[i].weight));
+		textboxes[i]->update();
+	}
+
+	div->showElement(0, predictions.size());
+	div->hideElement(predictions.size(), 5 - predictions.size());
+	ddm.recalculateHeight();
+
+
+};
+
+
 
 void NavBar::display() {
 	SDL_SetRenderDrawColor(renderer, 58, 205, 220, 255);
@@ -53,7 +107,7 @@ void NavBar::display() {
 	search_bar.display();
 	fuckbox.display();
 	img_count.display();
-
+	ddm.display();
 };
 
 void NavBar::update() {
@@ -63,6 +117,7 @@ void NavBar::update() {
 	search_bar.updateMovement();
 	img_count.updateMovement();
 	fuckbox.updateMove();
+	ddm.update();
 };
 
 void NavBar::move(Vector2f offset, Vector2f velocity) {
@@ -91,10 +146,29 @@ void NavBar::moveToPosition(Vector2f destination, Vector2f velocity) {
 };
 
 int NavBar::handleClick(Vector2f mousepos) {
+	for (auto& t : textboxes) {
+		if (t->handleClick(mousepos)) {
+			search_bar.pop_back();
+			active_tag = t->getText();
+			search_bar.addTag(spaceToUnderscore(t->getTags()[0]));
+			cout << "adding tag <" << t->getTags()[0] << ">" << endl;
+			search_bar.update();
+
+			return 2;
+		}
+	}
+
+
+
 	if (search_bar.handleClick(mousepos)) {
+		ddm.activate();
 		return 1;
 	}
-	return 0;
+	else {
+		ddm.deactivate();
+		return 0;
+	}
+	
 
 };
 

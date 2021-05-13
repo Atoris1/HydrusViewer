@@ -98,6 +98,8 @@ public:
 	void addVelocity(int d);
 	void renderThumbs();
 	void search(string tags);
+	void search(std::vector<std::string > tags);
+	void fileIdSearch(std::vector<std::string> f);
 	void update();
 	bool HandleClick(Vector2f pos, SDL_Rect max_hit_area);
 	bool requireRefresh();

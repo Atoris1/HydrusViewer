@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Div.cpp" />
+    <ClCompile Include="DropDownMenu.cpp" />
     <ClCompile Include="Grid.cpp" />
     <ClCompile Include="Grid.hpp" />
     <ClCompile Include="Hydrus.cpp" />
@@ -201,12 +202,14 @@
     <ClCompile Include="SettingsView.cpp" />
     <ClCompile Include="Tag.cpp" />
     <ClCompile Include="TextBox.cpp" />
+    <ClCompile Include="TextPredictionEngine.cpp" />
     <ClCompile Include="User.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="ViewImage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Div.h" />
+    <ClInclude Include="DropDownMenu.h" />
     <ClInclude Include="LTimer.h" />
     <ClInclude Include="MovableCircle.h" />
     <ClInclude Include="MovableImage.h" />
@@ -220,6 +223,7 @@
     <ClInclude Include="SettingsView.hpp" />
     <ClInclude Include="Tag.hpp" />
     <ClInclude Include="TextBox.hpp" />
+    <ClInclude Include="TextPredictionEngine.hpp" />
     <ClInclude Include="User.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>

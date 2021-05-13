@@ -4,15 +4,19 @@
 #include "TextBox.hpp"
 #include "SearchBox.hpp"
 #include "MovableImage.h"
+#include "DropDownMenu.h"
+#include "TextPredictionEngine.hpp"
 
 class NavBar {
 private:
 	std::vector<MovableRect*> rects;
 
-
+	
 	SDL_Renderer* renderer;
+	std::vector<TextBox*> textboxes;
 
 	MovableRect top_bar;
+	TextPredictionEngine TPE;
 
 	std::map<std::string, std::string> fonts;
 
@@ -22,9 +26,14 @@ private:
 	int x_origin;
 	int y_origin;
 
+	Div* div;
+
+	std::string active_tag;
+
 	MovableImage fuckbox;
 
 public:
+	DropDownMenu ddm;
 	SearchBox search_bar;
 	TextBox img_count;
 
@@ -36,5 +45,7 @@ public:
 	void move(Vector2f offset, Vector2f velocity);
 	void moveToPosition(Vector2f destination, Vector2f velocity);
 	int handleClick(Vector2f mousepos);
+	void updatePredicictions(string base);
+	//std::string getActiveTag();
 	~NavBar();
 };

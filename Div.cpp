@@ -207,7 +207,7 @@ void Div::updatePositions() {
 	int current_height = 0;
 
 
-	if (bounds->rect->y != origin_box.rect->y) {
+	if (bounds->rect->y != origin_box.rect->y && total_h > bounds->rect->h) {
 		start_y_pos += origin_box.rect->y - bounds->rect->y;
 	}
 
@@ -334,8 +334,17 @@ void Div::updatePositions() {
 		
 	}
 
+	
 	total_h = current_height + previous_height + top_m + bottom_m;
 
+
+	//If our total hight last time required a scrollbar but we no longer need one recaclualate positions starting at bounds again
+	//We call this late because we don't know the total hight untill after all calculations
+	if (scrollbar_enable == true && total_h < bounds->rect->h) {
+		scrollbar_enable = false;
+		updatePositions();
+		return;
+	}
 
 	if (total_h > bounds->rect->h) {
 		scrollbar_enable = true;

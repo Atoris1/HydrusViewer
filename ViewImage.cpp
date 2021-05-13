@@ -145,17 +145,17 @@ public:
 		if (full_lock.try_lock()) {
 			if (t.joinable()) {
 				t.join();
-				cout << "Thread joined after taking lock" << endl;
+				//cout << "Thread joined after taking lock" << endl;
 			}
 		}
 		else {
-			cout << "Lock is locked and attempting to join thread and disassemble images" << endl;
+			//cout << "Lock is locked and attempting to join thread and disassemble images" << endl;
 			if (t.joinable()) {
 				t.join();
-				cout << "Thread joined after locked lock" << endl;
+				//cout << "Thread joined after locked lock" << endl;
 			}
 			else {
-				cout << "Thread cannot be joined for some reason and lock has been locked" << endl;
+				//cout << "Thread cannot be joined for some reason and lock has been locked" << endl;
 			}
 		}
 		
@@ -166,7 +166,7 @@ public:
 			image->DestroyFileSurface();
 		}
 
-		cout << "Image deconstructed !" << endl;
+		//cout << "Image deconstructed !" << endl;
 		
 		
 

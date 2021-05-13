@@ -29,9 +29,10 @@ private:
 	SOCKET createSocket();
 	void connectToSocket(SOCKET* s);
 	void sendRequest(SOCKET socket, const char* msg);
-	string receiveData(SOCKET socketint, int size = 1000000);
+	string receiveData(SOCKET socketint, int size = 10000);
 	void formatJsontoImage(string& str);
 	vector<string> grabExt(std::string& str);
+	int getContentLength(std::string& str);
 
 public:
 	HydrusCall(int p);

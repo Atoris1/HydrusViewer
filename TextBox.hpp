@@ -79,7 +79,7 @@ public:
 	void setColor(SDL_Color);
 	void setFont(const char* font_name, int s);
 	void setPos(Vector2f pos);
-	void setBoxImage(std::string path, int alpha = 255);
+	void setBoxImage(std::string path, int alpha = 255, int r = 255, int g = 255, int b = 255);
 	void setMargins(int left = 0, int right = 0, int top = 0, int bottom = 0); // Sets the distance from the edge of the textbox the elements can be.
 	void setPadding(int x = -1, int y = -1); //Sets the spacing between elements, x = horizontal spacing, y = vertical spacing, -1 for value indicates no change
 	void setTags(std::vector<std::string> new_tags);

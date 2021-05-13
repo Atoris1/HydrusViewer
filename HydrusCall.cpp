@@ -102,6 +102,7 @@ HydrusCall::HydrusCall(User* u) {
 	SOCKET ConnectSocket = INVALID_SOCKET;
 	
 
+
 	while (ConnectSocket == INVALID_SOCKET) {
 		while (ptr == NULL) {
 			// Resolve the server address and port
@@ -216,7 +217,6 @@ std::string HydrusCall::receiveData(SOCKET socket, int size) {
 	// Receive until the peer closes the connection
 	int i= 0;
 	do {
-
 		iResult = recv(socket, szBuffer, DEFAULT_BUFLEN, 0);
 		//printf("recieve result is : %d\n", iResult);
 		if (iResult > 0) {
@@ -229,6 +229,22 @@ std::string HydrusCall::receiveData(SOCKET socket, int size) {
 		else {
 			printf("recv failed with error: %d\n", WSAGetLastError());
 		}
+		
+
+		//On first data connection get the content size and realloc
+		if (totalbytes == iResult) {
+			string s(szBuffer, iResult);
+			int new_size = getContentLength(s);
+			free(data);
+			data = NULL;
+			cout << "Data memory location after free : " << (void*)data << endl;
+			data = (char*)malloc(sizeof(char) * new_size);
+			cout << "Re-malloced to size : " << new_size << endl;
+			cout << "Data memory location : " << (void*)data << endl;
+			//Copying buffer into new pointer
+			memcpy(data, &szBuffer, iResult);
+		}
+
 		memset(&szBuffer, 0, DEFAULT_BUFLEN);
 		i++;
 	} while (iResult > 0);
@@ -257,6 +273,18 @@ void HydrusCall::formatJsontoImage(std::string& str) {
 	str = str.substr(str.size() - stoi(m.str(1)), stoi(m.str(1)));
 
 }
+
+int HydrusCall::getContentLength(std::string& str) {
+	if (str.size() == 0) {
+		return 0;
+	}
+	//Regex search for splice point
+	smatch m;
+	regex e("Content-Length: (\\d*)");
+	std::regex_search(str, m, e);
+	return (stoi(m.str(1)) + 1000);
+};
+
 
 //Grabs extenion from unparsed json
 vector<string> HydrusCall::grabExt(std::string& str) {
@@ -431,6 +459,7 @@ std::vector<Image*> HydrusCall::createImages(std::vector<std::string> strings) {
 				pos += 1;
 			}
 		}
+		std::sort(tags.begin(), tags.end());
 
 		images.push_back(new Image(to_string(j["metadata"][i]["file_id"].get<int>()), j["metadata"][i]["ext"].get<std::string>(), tags, j["metadata"][i]["hash"].get<string>(), j["metadata"][i]["size"].get<int>()));
 		//std::this_thread::sleep_for(std::chrono::seconds(1));
